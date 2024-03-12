@@ -33,6 +33,8 @@ class SecondFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
 
         binding.buttonSecond.setOnClickListener {
+            val mainActivity = activity as MainActivity
+            mainActivity.stopLogging()
             findNavController().navigate(R.id.action_SecondFragment_to_FirstFragment)
         }
     }

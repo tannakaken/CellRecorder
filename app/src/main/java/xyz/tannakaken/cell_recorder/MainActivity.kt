@@ -2,9 +2,11 @@ package xyz.tannakaken.cell_recorder
 
 import android.Manifest.permission.ACCESS_COARSE_LOCATION
 import android.Manifest.permission.ACCESS_FINE_LOCATION
+import android.Manifest.permission.WRITE_EXTERNAL_STORAGE
 import android.content.Context
 import android.content.pm.PackageManager.PERMISSION_GRANTED
 import android.os.Bundle
+import android.os.Environment
 import android.telephony.TelephonyManager
 import android.util.Log
 import android.view.Menu
@@ -19,7 +21,18 @@ import androidx.navigation.ui.navigateUp
 import androidx.navigation.ui.setupActionBarWithNavController
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationServices
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 import xyz.tannakaken.cell_recorder.databinding.ActivityMainBinding
+import java.io.BufferedWriter
+import java.io.File
+import java.io.FileOutputStream
+import java.io.OutputStreamWriter
+import java.nio.file.Paths
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
+import java.util.Timer
+import java.util.TimerTask
 
 
 class MainActivity : AppCompatActivity() {
@@ -27,7 +40,9 @@ class MainActivity : AppCompatActivity() {
     private lateinit var appBarConfiguration: AppBarConfiguration
     private lateinit var binding: ActivityMainBinding
     private lateinit var telephonyManager: TelephonyManager
+    private lateinit var timer: Timer
     private val _requestCodeLocation = 100
+    private var data: MutableList<CellLogRow> = mutableListOf()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -49,8 +64,25 @@ class MainActivity : AppCompatActivity() {
             Log.d("CellInfo", "すでに位置情報の取得を許可されている。")
         }
 
+        timer = Timer()
+
         binding.fab.setOnClickListener {
-            getLocation()
+            val cellLog = CellLog(data)
+            // データの保存
+            val date = LocalDateTime.now().format(DateTimeFormatter.ISO_DATE_TIME)
+            val filename = "celllog_${date}.json"
+            val file = File(getExternalFilesDir(""), filename)
+            try {
+                file.bufferedWriter().use {
+                    val jsonData = Json.encodeToString(cellLog)
+                    it.write(jsonData)
+                    it.flush()
+                    Toast.makeText(this, "ファイルの保存に成功しました", Toast.LENGTH_SHORT).show()
+                }
+            } catch (e: Exception) {
+                Toast.makeText(this, "ファイルの保存に失敗しました", Toast.LENGTH_LONG).show()
+                e.printStackTrace()
+            }
         }
     }
 
@@ -112,8 +144,29 @@ class MainActivity : AppCompatActivity() {
         // 位置情報を取得したらListenerが反応する
         fusedLocationClient.lastLocation
             .addOnSuccessListener(this) { location ->
-                Log.d("LocationSensor","$location")
-                Log.d("CellInfo", telephonyManager.allCellInfo.toString())
+                try {
+                    Log.d("LocationSensor","$location")
+                    val cellInfoList = telephonyManager.allCellInfo
+                    Log.d("CellInfo", cellInfoList.toString())
+                    data.add(CellLogRow(location, cellInfoList, LocalDateTime.now()))
+                } catch (exception: CellInfoException) {
+                    Toast.makeText(this, "基地局情報の取得ができませんでした。", Toast.LENGTH_SHORT).show()
+                } catch (exception: UnsupportedOperationException) {
+                    Toast.makeText(this, "基地局情報の取得をサポートしていません。", Toast.LENGTH_SHORT).show()
+                }
+
             }
+    }
+
+    fun startLogging() {
+        timer.scheduleAtFixedRate(object : TimerTask() {
+            override fun run() {
+                getLocation()
+            }
+        }, 0, 1000)
+    }
+
+    fun stopLogging() {
+        timer.cancel()
     }
 }

@@ -1,6 +1,7 @@
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
+    id("org.jetbrains.kotlin.plugin.serialization")
 }
 
 android {
@@ -9,7 +10,7 @@ android {
 
     defaultConfig {
         applicationId = "xyz.tannakaken.cell_recorder"
-        minSdk = 24
+        minSdk = 29
         targetSdk = 34
         versionCode = 1
         versionName = "1.0"
@@ -52,4 +53,7 @@ dependencies {
 
     // Fused Location
     implementation("com.google.android.gms:play-services-location:21.2.0")
+
+    // json serialize
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.3")
 }
