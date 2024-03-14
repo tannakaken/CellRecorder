@@ -21,6 +21,11 @@ import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import kotlin.Exception
 
+/**
+ * https://developer.android.com/reference/android/location/Location.html
+ *
+ * TODO もっと細かい情報を拾える
+ */
 @Serializable
 data class SerializableLocation(private val altitude: Double, private val longitude: Double) {
     constructor(location: Location): this(location.altitude, location.longitude)
@@ -29,7 +34,7 @@ data class SerializableLocation(private val altitude: Double, private val longit
 /**
  * https://developer.android.com/reference/android/telephony/CellIdentity?_gl=1*1ot98te*_up*MQ..*_ga*MzgyOTQ4NDEyLjE3MTAyMjIxOTQ.*_ga_6HH9YJMN9M*MTcxMDIyMjE5My4xLjAuMTcxMDIyMjE5NC4wLjAuMA..
  *
- * TODO まだ細かい基地局データは取れていない。
+ * TODO まだ細かい基地局データは取れていない。手元の環境だと「KDDI」しか情報が取れていない。もっと細かい情報を得るためには、CellIdentityの具体的なクラスの仕様に踏み込む必要がある。
  */
 @Serializable
 data class SerializableCellIdentity(private val operatorAlphaLong: String, private val operatorAlphaShort: String) {

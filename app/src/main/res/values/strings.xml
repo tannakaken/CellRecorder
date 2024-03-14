@@ -2,8 +2,10 @@
     <string name="app_name">CellRecorder</string>
     <string name="action_settings">Settings</string>
     <!-- Strings used for fragments for navigation -->
-    <string name="first_fragment_label">First Fragment</string>
-    <string name="second_fragment_label">Second Fragment</string>
+    <string name="main_fragment_label">Cell Recorder</string>
+    <string name="recording_fragment_label">Recording…</string>
     <string name="start">Start</string>
     <string name="stop">Stop</string>
+    <!-- content description -->
+    <string name="fab_description">About This App</string>
 </resources>
