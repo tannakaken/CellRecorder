@@ -6,6 +6,9 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.navigation.fragment.findNavController
+import kotlinx.serialization.ExperimentalSerializationApi
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 import xyz.tannakaken.cell_recorder.databinding.FragmentMainBinding
 
 /**
@@ -14,7 +17,6 @@ import xyz.tannakaken.cell_recorder.databinding.FragmentMainBinding
 class MainFragment : Fragment() {
 
     private var _binding: FragmentMainBinding? = null
-
 
     // This property is only valid between onCreateView and
     // onDestroyView.
@@ -29,13 +31,29 @@ class MainFragment : Fragment() {
         return binding.root
     }
 
+    @OptIn(ExperimentalSerializationApi::class)
+    private fun getLocation() {
+        val mainActivity = activity as MainActivity
+        val prettyJson = Json { // this returns the JsonBuilder
+            prettyPrint = true
+            // optional: specify indent
+            prettyPrintIndent = " "
+        }
+        mainActivity.getLog { cellLogRow ->
+            binding.textView.text = prettyJson.encodeToString(cellLogRow)
+        }
+    }
+
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        binding.buttonFirst.setOnClickListener {
+        binding.buttonStart.setOnClickListener {
             val mainActivity = activity as MainActivity
             mainActivity.startLogging()
             findNavController().navigate(R.id.action_MainFragment_to_RecordingFragment)
+        }
+        binding.buttonUpdate.setOnClickListener {
+            getLocation()
         }
     }
 

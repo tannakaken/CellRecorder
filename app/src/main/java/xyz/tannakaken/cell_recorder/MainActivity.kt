@@ -11,6 +11,7 @@ import android.content.Intent
 import android.content.pm.PackageManager.PERMISSION_GRANTED
 import android.os.Bundle
 import android.os.PersistableBundle
+import android.telephony.TelephonyManager
 import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
@@ -23,7 +24,10 @@ import androidx.navigation.fragment.findNavController
 import androidx.navigation.ui.AppBarConfiguration
 import androidx.navigation.ui.navigateUp
 import androidx.navigation.ui.setupActionBarWithNavController
+import com.google.android.gms.location.FusedLocationProviderClient
+import com.google.android.gms.location.LocationServices
 import xyz.tannakaken.cell_recorder.databinding.ActivityMainBinding
+import java.time.LocalDateTime
 
 
 class MainActivity : AppCompatActivity() {
@@ -33,11 +37,16 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var appBarConfiguration: AppBarConfiguration
     private lateinit var binding: ActivityMainBinding
+    private lateinit var telephonyManager: TelephonyManager
+    private lateinit var fusedLocationClient: FusedLocationProviderClient
     private val _requestCodeLocation = 100
     private var logging = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        telephonyManager = getSystemService(Context.TELEPHONY_SERVICE) as TelephonyManager
+        fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
 
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
@@ -138,9 +147,9 @@ class MainActivity : AppCompatActivity() {
         Log.d(this::class.java.simpleName, "createNotificationChannel")
         val channel = NotificationChannel(
             LogService.CHANNEL_ID,
-            "お知らせ",
+            "位置情報ログ収集開始のお知らせ",
             NotificationManager.IMPORTANCE_DEFAULT).apply {
-            description = "お知らせを通知します。"
+            description = "位置情報ログの収集を開始しました。"
         }
         val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         notificationManager.createNotificationChannel(channel)
@@ -158,5 +167,37 @@ class MainActivity : AppCompatActivity() {
         logging = false
         val intent = Intent(this, LogService::class.java)
         stopService(intent)
+    }
+
+    fun getLog(callback: (CellLogRow) -> Unit) {
+        Log.d(this::class.java.simpleName, "getLog")
+        if (ActivityCompat.checkSelfPermission(
+                this,
+                ACCESS_FINE_LOCATION
+            ) != PERMISSION_GRANTED
+            && ActivityCompat.checkSelfPermission(
+                this,
+                ACCESS_COARSE_LOCATION
+            ) != PERMISSION_GRANTED
+            && ActivityCompat.checkSelfPermission(
+                this,
+                ACCESS_BACKGROUND_LOCATION
+            ) != PERMISSION_GRANTED
+        ) {
+            Toast.makeText(this, "バックグラウンドでの位置情報の取得を許可されていません。", Toast.LENGTH_SHORT).show()
+            return
+        }
+        fusedLocationClient.lastLocation.addOnSuccessListener { location ->
+            try {
+                Log.d(this::class.java.simpleName,"$location")
+                val cellInfoList = telephonyManager.allCellInfo
+                Log.d(this::class.java.simpleName, cellInfoList.toString())
+                callback(CellLogRow(location, cellInfoList, LocalDateTime.now()))
+            } catch (exception: CellInfoException) {
+                Toast.makeText(this, "基地局情報の取得ができませんでした。", Toast.LENGTH_SHORT).show()
+            } catch (exception: UnsupportedOperationException) {
+                Toast.makeText(this, "基地局情報の取得をサポートしていません。", Toast.LENGTH_SHORT).show()
+            }
+        }
     }
 }

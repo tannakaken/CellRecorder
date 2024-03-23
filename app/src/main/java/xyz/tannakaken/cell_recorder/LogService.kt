@@ -71,7 +71,7 @@ class LogService: Service() {
                 val location = locationResult.lastLocation // 最新の情報だけ拾う
                 location ?: return
                 try {
-                    Log.d("LocationSensor","$location")
+                    Log.d(this::class.java.simpleName,"$location")
                     val cellInfoList = telephonyManager.allCellInfo
                     Log.d(this::class.java.simpleName, cellInfoList.toString())
                     data.add(CellLogRow(location, cellInfoList, LocalDateTime.now()))
